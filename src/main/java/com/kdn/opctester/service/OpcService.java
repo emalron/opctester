@@ -32,6 +32,7 @@ public class OpcService {
     private final Object clientLock = new Object();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private List<NodeId> leaves = new ArrayList<>();
+    private Map<Integer,String> names = new HashMap<>();
 
     @PreDestroy
     public void cleanup() {
@@ -70,7 +71,7 @@ public class OpcService {
 
 			AddressSpace addressSpace = client.getAddressSpace();
 
-            NodeId startNodeId = new NodeId(0, identifier);			
+            NodeId startNodeId = new NodeId(namespace, identifier);			
 
 			QualifiedName browseName = client.getAddressSpace().getNode(startNodeId).getBrowseName();
 			String rootName = browseName != null ? browseName.getName() : "Objects";
@@ -202,26 +203,27 @@ public class OpcService {
 			List<ReferenceDescription> references = addressSpace.browse(nodeId);
 			for(ReferenceDescription ref : references) {
 				NodeId childId = ref.getNodeId().toNodeId(null).get();
+                String name = ref.getDisplayName().getText();
+                Integer id = Integer.valueOf(childId.getIdentifier().toString());
+                names.put(id, name);
                 traverseLeaves(addressSpace, childId, leaves);
 			}
 			
 			if(references.size() == 0) {
 				Integer id_ = Integer.valueOf(nodeId.getIdentifier().toString());
                 Integer namespace_ = nodeId.getNamespaceIndex().intValue();
-            	leaves.add(new Node(namespace_, id_));
+                String name_ = names.getOrDefault(id_, "Unknown");
+            	leaves.add(new Node(namespace_, id_, name_));
 			}
 		} catch (UaException e) {
 			e.printStackTrace();
 		}
     }
 
-    public Map<Integer, Object> pollInternal() {
+    public Map<Integer, Map<String,Object>> pollInternal() {
         if(leaves.size() > 0) {
             try {
-                Map<Integer,Object> values = new HashMap<>();
-                System.out.println("=========================");
-                System.out.println(leaves.get(0));
-                System.out.println("=========================");
+                Map<Integer,Map<String,Object>> values = new HashMap<>();
                 List<DataValue> dataValues = client.readValues(0, TimestampsToReturn.Both, leaves).get();
                 
                 for(int i=0; i<leaves.size(); i++) {
@@ -230,9 +232,10 @@ public class OpcService {
 
                     Integer id_ = Integer.valueOf(nodeId_.getIdentifier().toString());
                     Object value_ = dataValue_.getValue().getValue();
+                    Map<String,Object> val_ = Map.of("value", value_, "name", names.getOrDefault(id_, "Unknown"));
 
                     if(dataValue_ != null) {
-                        values.put(id_, value_);
+                        values.put(id_, val_);
                     }
                 }
 
@@ -246,7 +249,7 @@ public class OpcService {
     }
 
     public String pollLeaves() {
-        Map<Integer,Object> result = pollInternal();
+        Map<Integer,Map<String,Object>> result = pollInternal();
         try {
             String jsonString = objectMapper.writeValueAsString(result);
             return jsonString;

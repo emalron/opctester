@@ -64,7 +64,7 @@ public class WsSubscriptionService {
         System.out.println("============================");
         ScheduledFuture<?> task = scheduler.scheduleAtFixedRate(() -> {
             try {
-                Map<Integer,Object> values = opcService.pollInternal();
+                Map<Integer,Map<String,Object>> values = opcService.pollInternal();
                 System.out.println("======================");
                 System.out.println("poll internal: " + values.size());
                 System.out.println("======================");
