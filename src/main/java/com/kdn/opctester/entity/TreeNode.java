@@ -11,5 +11,6 @@ public class TreeNode {
     private String nodeClass;
     private int namespaceIndex;
     private long identifier;
+    private boolean hasChildren;
     private List<TreeNode> children = new ArrayList<>();
 }

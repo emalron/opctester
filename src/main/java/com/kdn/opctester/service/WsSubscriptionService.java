@@ -7,7 +7,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -69,6 +68,7 @@ public class WsSubscriptionService {
                 System.out.println("poll internal: " + values.size());
                 System.out.println("======================");
                 messagingTemplate.convertAndSend("/topic/opcua/" + id, values);
+                opcService.enqueue(values);
             } catch(Exception e) {
                 e.printStackTrace();
             }
