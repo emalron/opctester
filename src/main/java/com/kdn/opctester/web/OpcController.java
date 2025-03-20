@@ -22,31 +22,31 @@ public class OpcController {
 
     @GetMapping({"/browse", "/browse/"})
     public String browse() {
-        String result = opcService.browseOneDepth(0, 85);
+        String result = opcService.browseOneDepth(0, "85");
         return result;
     }
 
     @GetMapping("/browse/{id}")
-    public String browseById(@PathVariable("id") Integer id) {
+    public String browseById(@PathVariable("id") String id) {
         String result = opcService.browseOneDepth(0, id);
         return result;
     }
     @GetMapping("/browse/{namespace}/{id}")
-    public String browseByNamespaceAndId(@PathVariable("namespace") Integer namespace, @PathVariable("id") Integer id) {
+    public String browseByNamespaceAndId(@PathVariable("namespace") Integer namespace, @PathVariable("id") String id) {
         String result = opcService.browseOneDepth(namespace, id);
         return result;
     }
 
     // 웹소켓을 열어서 polling 대상이 있는 경우 polling 값을 전달함
     @GetMapping("/traverse/{id}")
-    public String traverseById(@PathVariable("id") Integer id) {
+    public String traverseById(@PathVariable("id") String id) {
         String result = opcService.browseLeaves(0, id);
 
         return result;
     }
 
     @GetMapping("/traverse/{namespace}/{id}")
-    public String traverse(@PathVariable("namespace") Integer namespace, @PathVariable("id") Integer id) {
+    public String traverse(@PathVariable("namespace") Integer namespace, @PathVariable("id") String id) {
         String result = opcService.browseLeaves(namespace, id);
 
         return result;
@@ -70,5 +70,11 @@ public class OpcController {
         boolean result = opcService.connect(host);
         Map<String,Boolean> msg = Map.of("result", result);
         return msg;
+    }
+
+    @GetMapping("/travel")
+    public Map<String,Map<String,Object>> travel() {
+        Map<String,Map<String,Object>> result = null;
+        return result;
     }
 }

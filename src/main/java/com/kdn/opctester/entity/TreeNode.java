@@ -10,7 +10,7 @@ public class TreeNode {
     private String name;
     private String nodeClass;
     private int namespaceIndex;
-    private long identifier;
+    private String identifier;
     private boolean hasChildren;
     private List<TreeNode> children = new ArrayList<>();
 }
