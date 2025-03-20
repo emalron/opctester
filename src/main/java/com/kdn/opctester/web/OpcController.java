@@ -37,17 +37,23 @@ public class OpcController {
         return result;
     }
 
+    @GetMapping("/browse/{namespace}/{type}/{id}")
+    public String browseByNamespaceAndId(@PathVariable("namespace") Integer namespace, @PathVariable("type") String type, @PathVariable("id") String id) {
+        String result = opcService.browseOneDepth(namespace, type, id);
+        return result;
+    }
+
     // 웹소켓을 열어서 polling 대상이 있는 경우 polling 값을 전달함
     @GetMapping("/traverse/{id}")
     public String traverseById(@PathVariable("id") String id) {
-        String result = opcService.browseLeaves(0, id);
+        String result = opcService.browseLeaves(0, "i", id);
 
         return result;
     }
 
-    @GetMapping("/traverse/{namespace}/{id}")
-    public String traverse(@PathVariable("namespace") Integer namespace, @PathVariable("id") String id) {
-        String result = opcService.browseLeaves(namespace, id);
+    @GetMapping("/traverse/{namespace}/{type}/{id}")
+    public String traverse(@PathVariable("namespace") Integer namespace, @PathVariable("type") String type, @PathVariable("id") String id) {
+        String result = opcService.browseLeaves(namespace, type, id);
 
         return result;
     }

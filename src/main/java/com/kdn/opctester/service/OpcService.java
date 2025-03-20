@@ -64,8 +64,8 @@ public class OpcService {
         try {
             initializeClient();
             leaves = new ArrayList<>();
-            executorService = Executors.newScheduledThreadPool(1);
-            executorService.scheduleAtFixedRate(this::filesave, 0, 500, TimeUnit.MILLISECONDS);
+            // executorService = Executors.newScheduledThreadPool(1);
+            // executorService.scheduleAtFixedRate(this::filesave, 0, 500, TimeUnit.MILLISECONDS);
             return true;
         } catch(Exception e) {
             e.printStackTrace();
@@ -122,6 +122,55 @@ public class OpcService {
         return null;
     }
 
+    public String browseOneDepth(Integer namespace, String type, String identifier) {
+        try {
+            ensureConnection();
+
+            AddressSpace addressSpace = client.getAddressSpace();
+
+            NodeId startNodeId;
+            switch(type) {
+                case "i":
+                    startNodeId = new NodeId(namespace, Integer.valueOf(identifier));
+                    break;
+                case "s":
+                    startNodeId = new NodeId(namespace, identifier);
+                    break;
+                default:
+                    startNodeId = new NodeId(namespace, identifier);
+            }
+
+            QualifiedName browseName = client.getAddressSpace().getNode(startNodeId).getBrowseName();
+            String rootName = browseName != null ? browseName.getName() : "Objects";
+            // long nodeId = Long.valueOf(startNodeId.getIdentifier().toString());
+            String nodeId = startNodeId.getIdentifier().toString();
+            String idType = startNodeId.getType().getValue() == 0 ? "i" : "s";
+            
+            TreeNode root = new TreeNode();
+            root.setName(rootName);
+            root.setNodeClass(NodeClass.Object.toString());
+            root.setNamespaceIndex(startNodeId.getNamespaceIndex().intValue());
+            root.setIdentifier(nodeId);
+            root.setIdType(idType);
+
+            browseNodes(addressSpace, startNodeId, root);
+
+            String jsonString = objectMapper.writeValueAsString(root);
+
+            return jsonString;
+        } catch (UaException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     private void browseNodes(AddressSpace addressSpace, NodeId nodeId, TreeNode parent) {
         try {
             List<ReferenceDescription> references = addressSpace.browse(nodeId);
@@ -147,11 +196,13 @@ public class OpcService {
 
         // long nodeId = Long.parseLong(ref.getNodeId().getIdentifier().toString());
         String nodeId = ref.getNodeId().getIdentifier().toString();
+        String idType = ref.getNodeId().getType().getValue() == 0 ? "i" : "s";
 
         treeNode.setName(ref.getBrowseName().getName());
         treeNode.setNodeClass(ref.getNodeClass().name());
         treeNode.setIdentifier(nodeId);
         treeNode.setNamespaceIndex(ref.getNodeId().getNamespaceIndex().intValue());
+        treeNode.setIdType(idType);
         return treeNode;
     }
 
@@ -226,7 +277,7 @@ public class OpcService {
         return new String();
     }
 
-    public String browseLeaves(Integer namespace, String identifier) {
+    public String browseLeaves(Integer namespace, String type, String identifier) {
         try {
             ensureConnection();
 
@@ -234,26 +285,16 @@ public class OpcService {
 
             NodeId startNodeId = Identifiers.ObjectsFolder;
             if(identifier != null && !identifier.isEmpty()) {
-                startNodeId = new NodeId(namespace, Integer.valueOf(identifier));
-                System.out.println("===========================");
-                System.out.println("identifier check: " + identifier);
-                System.out.println("===========================");
+                startNodeId = getNodeId(namespace, type, identifier);
             }
-
-            
 
             List<Node> result = new ArrayList<>();
             // traverseLeaves(addressSpace, startNodeId, result);
             traverseLeavesOneDepth(addressSpace, startNodeId, result);
             
             leaves = result.stream().map(e -> {
-                return new NodeId(e.getNamespace(), e.getId());
+                return getNodeId(e.getNamespace(), e.getType(), e.getId());
             }).toList();
-
-            System.out.println("==========================");
-            System.out.println(leaves);
-            System.out.println(leaves.get(0));
-            System.out.println("==========================");
 
             List<DataValue> dataValues = client.readValues(0, TimestampsToReturn.Both, leaves).get();
             int i = 0;
@@ -299,7 +340,8 @@ public class OpcService {
                 Integer namespace_ = nodeId.getNamespaceIndex().intValue();
                 String id_ = nodeId.getIdentifier().toString();
                 String name_ = names2.getOrDefault(id_, "Unknown");
-                leaves.add(new Node(namespace_, id_, name_));
+                int idType = nodeId.getType().getValue();
+                leaves.add(new Node(namespace_, id_, name_, idType));
             }
         } catch (UaException e) {
             e.printStackTrace();
@@ -316,9 +358,10 @@ public class OpcService {
                 Integer namespace_ = childId.getNamespaceIndex().intValue();
                 // Integer id = Integer.valueOf(childId.getIdentifier().toString());
                 String id_ = childId.getIdentifier().toString();
+                int idType = childId.getType().getValue();
                 names2.put(id_, name);
                 // traverseLeaves(addressSpace, childId, leaves);
-                tree.add(new Node(namespace_, id_, name ));
+                tree.add(new Node(namespace_, id_, name, idType));
             }
         } catch (UaException e) {
             e.printStackTrace();
@@ -407,5 +450,18 @@ public class OpcService {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
+    }
+
+    private NodeId getNodeId(int namespace, String type, String identifier) {
+        NodeId result = null;
+        switch(type) {
+            case "i":
+                result = new NodeId(namespace, Integer.parseInt(identifier));
+                break;
+            case "s":
+                result = new NodeId(namespace, identifier);
+                break;
+        }
+        return result;
     }
 }
