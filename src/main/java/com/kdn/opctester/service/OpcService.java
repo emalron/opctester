@@ -123,6 +123,8 @@ public class OpcService {
             parent.setHasChildren(references.size() > 0);
             for(ReferenceDescription ref : references) {
                 TreeNode childTreeNode = createTreeNode(ref);
+                List<ReferenceDescription> refs_ = addressSpace.browse(ref.getNodeId().toNodeIdOrThrow(null));
+                childTreeNode.setHasChildren(refs_.size() > 0);
                 parent.getChildren().add(childTreeNode);
 
                 // NodeId childId = ref.getNodeId().toNodeId(null).get();
@@ -130,7 +132,9 @@ public class OpcService {
             }
         } catch (UaException e) {
             e.printStackTrace();
-        }
+        } catch (Exception e) {
+                    e.printStackTrace();
+                }
     }
 
     public TreeNode createTreeNode(ReferenceDescription ref) {
