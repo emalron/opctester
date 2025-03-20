@@ -63,9 +63,12 @@ public class WsSubscriptionService {
         System.out.println("============================");
         ScheduledFuture<?> task = scheduler.scheduleAtFixedRate(() -> {
             try {
-                Map<Integer,Map<String,Object>> values = opcService.pollInternal();
+                Map<String,Map<String,Object>> values = opcService.pollInternal();
                 System.out.println("======================");
                 System.out.println("poll internal: " + values.size());
+                if(values.size() > 0) {
+                    System.out.println(values.get(0));
+                }
                 System.out.println("======================");
                 messagingTemplate.convertAndSend("/topic/opcua/" + id, values);
                 opcService.enqueue(values);

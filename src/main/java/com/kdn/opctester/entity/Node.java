@@ -7,12 +7,13 @@ import lombok.Setter;
 @Setter
 public class Node {
     Integer namespace;
-    Integer id;
+    String id;
+    String type;
     String name;
 
-    public Node(Integer namespace, Integer id, String name) {
+    public Node(Integer namespace, String id, String name) {
         this.namespace = namespace;
         this.id = id;
         this.name = name;
-    }
+    }  
 }
